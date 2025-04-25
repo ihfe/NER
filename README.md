@@ -41,6 +41,47 @@
 
 测试集上SOTA效果见榜单：http://www.CLUEbenchmark.com
 
+### 4、仅使用BERT做NER的核心代码（调用HuggingFace中的BERT）
+```python
+from transformers import BertForTokenClassification
+model = BertForTokenClassification.from_pretrained("bert-base-uncased", num_labels=17)#这样模型就可以拿过来直接使用
+model.cuda()#将模型挪到GPU
+
+model.train()
+optimizer = torch.optim.Adam(model.parameters(),lr=1e-5)
+Epochs = 10
+for epoch in range(Epochs):
+    losses = 0.0
+    for data in trainloader:
+        tokens_tensors, masks_tensors, label_tensors = [t.cuda() for t in data]
+        outputs = model(input_ids = tokens_tensors,attention_mask = masks_tensors,labels = label_tensors)
+        loss = outputs[0]#上一行代码已经传入了labels，所以这一步可以直接得到loss
+```
+
+### 5、做增量的核心代码
+
+```python
+class BertNER(nn.Module):
+    def __init__():
+        pass
+    def forward():
+        pass
+    def extend_output_layer(self, new_labels):
+        # 实体类别增加
+        new_num_labels = self.num_labels + len(new_labels)
+        old_classifier = self.classifier
+        self.classifier = nn.Linear(self.bert.config.hidden_size, new_num_labels)
+        #关闭参数更新
+        with torch.no_grad():
+            self.classifier.weight[:old_classifier.weight.size(0)] = old_classifier.weight
+            self.classifier.bias[:old_classifier.bias.size(0)] = old_classifier.bias
+        self.num_labels = new_num_labels
+```
+
+
+
+
+
 
 
 
